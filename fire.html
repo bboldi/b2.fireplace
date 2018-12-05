@@ -4,8 +4,12 @@
   <style>
     .c {
                 position: fixed;
-                border: 1px dotted silver;
-                border-radius: 50%;
+                border: 1px solid black;
+                border-radius: 10%;
+                padding: 0px;
+                margin: 0px;
+                width: 30px;
+                height: 30px;
             }
         </style>
   <script type="text/javascript">
@@ -25,7 +29,7 @@
         [+0.2,+0.2,+0.2]
       ];
 
-    let convolutionDivider = 6.24;
+    let convolutionDivider = 6.27;
 
     function getDiv(x, y) {
       let size = 30;
@@ -33,7 +37,7 @@
       let offset = 100;
       let idy = (x % 2 === 0 ? height - y - 1 : y);
       let idText = "c_" + ((x * height) + idy);
-      return '<div class="c" id="' + idText + '" style="top: ' + (offset + (y * size)) + 'px; left: ' + (offset + (x * size)) + 'px; padding: ' + padding + 'px;"></div>';
+      return '<div class="c" id="' + idText + '" style="top: ' + (offset + (y * size)) + 'px; left: ' + (offset + (x * size)) + 'px; "></div>';
     }
 
     function setPixelColor(index, r, g, b) {
