@@ -1,0 +1,177 @@
+<html>
+
+<head>
+  <style>
+    .c {
+                position: fixed;
+                border: 1px dotted silver;
+                border-radius: 50%;
+            }
+        </style>
+  <script type="text/javascript">
+
+    let width = 5;
+    let height = 16;
+    let fullLength = width * height;
+
+    let maxValue = 255;
+
+    let display = [];
+    let buffer = [];
+
+    let convolutionMatrix = [
+        [-0.2,-0.2,-0.2],
+        [0.1,6,0.1],
+        [+0.2,+0.2,+0.2]
+      ];
+
+    let convolutionDivider = 6.24;
+
+    function getDiv(x, y) {
+      let size = 30;
+      let padding = 10;
+      let offset = 100;
+      let idy = (x % 2 === 0 ? height - y - 1 : y);
+      let idText = "c_" + ((x * height) + idy);
+      return '<div class="c" id="' + idText + '" style="top: ' + (offset + (y * size)) + 'px; left: ' + (offset + (x * size)) + 'px; padding: ' + padding + 'px;"></div>';
+    }
+
+    function setPixelColor(index, r, g, b) {
+      document.getElementById("c_" + index).style.backgroundColor = "rgb(" + r + "," + g + "," + b + ")";
+    }
+
+    function generateGrid() {
+      for (let i = 0; i < width; i++) {
+        for (let j = 0; j < height; j++) {
+          document.write(getDiv(i, j));
+        }
+      }
+    }
+
+    // init
+
+    function initiateDisplayMatrix() {
+      for (let i = 0; i < width; i++) {
+        for (let j = 0; j < height; j++) {
+
+          display[i] = display[i] || [];
+          display[i][j] = [0, 0, 0];
+
+          buffer[i] = buffer[i] || [];
+          buffer[i][j] = [0, 0, 0];
+
+        }
+      }
+
+    }
+
+    function addNewParticles() {
+
+      let rx = Math.floor(Math.random()*width);
+      let ry = Math.floor(4*height/5 + Math.random()*height/5);
+
+      let cr = Math.floor(Math.random()*maxValue);
+      let cg = Math.floor(Math.random()*maxValue);
+      let cb = Math.floor(Math.random()*maxValue);
+
+      display[rx][ry] = [cr,cg,cb];
+    }
+
+    // set led colour per strip
+    function setLed(x, y, color) {
+      let idy = (x % 2 === 0 ? height - y - 1 : y);
+      let index = (x * height) + idy;
+
+      // set index here
+
+      setPixelColor(index, color[0], color[1], color[2]);
+    }
+
+    function show(picture) {
+      for (let i = 0; i < width; i++) {
+        for (let j = 0; j < height; j++) {
+          setLed(i, j, picture[i][j]);
+        }
+      }
+    }
+
+    function getSafePixelData(x,y, picture)
+    {
+      // return pixel data safely
+
+      x = x<0 ? 0 : x;
+      x = x>width-1 ? width-1 : x;
+
+      y = y<0 ? 0 : y;
+      y = y>height-1 ? height-1 : y;
+
+      return picture[x][y];
+
+    }
+
+    function claculatePixel(x,y,pic)
+    {
+      let _originalPixel = getSafePixelData(x,y,pic);
+      let _newPixel = [0,0,0];
+
+
+      for(let i=-1;i<2;i++)
+      {
+        for(let j=-1;j<2;j++)
+        {
+          let _pixel = getSafePixelData(x+i,y+j, pic);
+          for(let p=0;p<3;p++) { _newPixel[p] = _newPixel[p] + (_pixel[p]*convolutionMatrix[j+1][i+1]); }
+        }
+      }
+
+      for(let p=0;p<3;p++) { _newPixel[p] = Math.min(maxValue, Math.floor(_newPixel[p] / convolutionDivider)); }
+
+
+      buffer[x][y] = _newPixel;
+    }
+
+    function interpolate() {
+
+      for (let i = 0; i < width; i++) {
+        for (let j = 0; j < height; j++) {
+          claculatePixel(i,j,display);
+        }
+      }
+
+      display = buffer.slice();
+
+    }
+
+    function setup() {
+      generateGrid();
+      initiateDisplayMatrix();
+    }
+
+    function loop() {
+      // let position = Math.floor(Math.random()*fullLength);
+      // let maxValue = 255;
+
+      // console.log(position);
+      // setPixelColor(position, Math.floor(Math.random()*maxValue), Math.floor(Math.random()*maxValue),Math.floor(Math.random()*maxValue));
+
+      addNewParticles();
+      interpolate();
+      show(display);
+
+      setTimeout(loop, 10);
+    }
+
+    (() => {
+      setup();
+      loop();
+    })();
+
+  </script>
+  <title> Fire </title>
+</head>
+
+<body>
+
+</body>
+
+</html>
