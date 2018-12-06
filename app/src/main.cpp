@@ -44,9 +44,9 @@ float convolutionMatrix[3][3] = {
     {0.2, 1, 0.2}};
 
 int palette[3][3] = {
-    {200, 44, 12},
-    {100, 55, 0},
-    {245, 245, 12}
+    {218,51,0},
+    {100,55,0},
+    {254,200,0},
 };
 
 float convolutionDivider = 2.2;
