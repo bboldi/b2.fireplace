@@ -7,7 +7,8 @@
 #define COLOR_ORDER GRB
 
 #define DELAY_PER_CYCLE 20
-#define ADD_PARTICLE_CYCLE 1
+#define ADD_PARTICLE_CYCLE 2
+#define POSTPROCESS_CYCLE 3
 
 #define WIDTH 5
 #define HEIGHT 16
@@ -31,8 +32,8 @@ float masking[16][5] = {
   {1.0, 1.0,  1.0,  1.0,  1.0},
   {1.0, 1.0,  1.0,  1.0,  1.0},
   {1.0, 1.0,  1.0,  1.0,  1.0},
-  {1.0, 1.0,  1.0,  1.0,  1.0},
-  {1.0, 1.0,  1.0,  1.0,  1.0}
+  {0.4, 1.0,  1.0,  1.0,  0.4},
+  {0.2, 0.5,  1.0,  0.5,  0.2}
 };
 
 float convolutionMatrix[3][3] = {
@@ -46,6 +47,7 @@ float convolutionDivider = 2.2;
 int display[WIDTH][HEIGHT][3];
 int buffer[WIDTH][HEIGHT][3];
 int particleAddedCnt = ADD_PARTICLE_CYCLE;
+int postProcessCnt = POSTPROCESS_CYCLE;
 
 CRGB leds[NUM_LEDS];
 
@@ -91,33 +93,33 @@ void addNewParticle()
 {
   particleAddedCnt++;
 
-  if(particleAddedCnt>ADD_PARTICLE_CYCLE)
+  if(particleAddedCnt>=ADD_PARTICLE_CYCLE)
   {
     particleAddedCnt=0;
     int rx = rand() % WIDTH;
-    int ry = floor(4 * HEIGHT / 5 + rand() % HEIGHT / 5);
+    int ry = ceil(5 * HEIGHT / 6 + rand() % HEIGHT / 6);
 
     int _ct = rand() % 2;
-    int _rc = 1+rand() % 4;
+    int _rc = 1+rand() % 6;
 
     switch(_ct){
 
       case 0:
-        display[rx][ry][0] = 255 / _rc;
-        display[rx][ry][1] = 0;
-        display[rx][ry][2] = 0;
+        display[rx][ry][0] = (int)((float)200 / (float)_rc);
+        display[rx][ry][1] = (int)((float)44 / (float)_rc);
+        display[rx][ry][2] = (int)((float)12 / (float)_rc);
       break;
 
       case 1:
-        display[rx][ry][0] = 100 / _rc;
-        display[rx][ry][1] = 55 / _rc;
+        display[rx][ry][0] = (int)((float)100 / (float)_rc);
+        display[rx][ry][1] = (int)((float)55 / (float)_rc);
         display[rx][ry][2] = 0;
       break;
 
       case 2:
-        display[rx][ry][0] = 245 / _rc;
-        display[rx][ry][1] = 245 / _rc;
-        display[rx][ry][2] = 12 ;
+        display[rx][ry][0] = (int)((float)245 / (float)_rc);
+        display[rx][ry][1] = (int)((float)245 / (float)_rc);
+        display[rx][ry][2] = (int)((float)12 / (float)_rc);
       break;
     }
   }
@@ -153,14 +155,91 @@ void setLedByCoord(int x, int y, int _color[3])
 
   if(DO_MASK)
   {
-    _cr = _cr * masking[y][x];
-    _cg = _cg * masking[y][x];
-    _cb = _cb * masking[y][x];
+    _cr = (int)((float)_cr * (float)masking[y][x]);
+    _cg = (int)((float)_cg * (float)masking[y][x]);
+    _cb = (int)((float)_cb * (float)masking[y][x]);
   }
 
   leds[index].red = _cr;
   leds[index].green = _cg;
   leds[index].blue = _cb;
+}
+
+int _postProcess[4][5][3] = {
+  {{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+  {{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+  {{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+  {{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}
+};
+
+void postProcessCalculate()
+{
+
+  float mask[4][5] = {
+    {0.1,0.1,0.5,0.1,0.1},
+    {0.2,0.5,1,0.5,0.2},
+    {0.5,1,1,1,0.5},
+    {0.5,1,1,1,0.5}
+  };
+
+  for (int i = 0; i < WIDTH; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+      if(mask[j][i] > 0.0)
+      {
+        int _color[3];
+        int _ct = rand() % 2;
+        int _rc = 4 + rand() % 4;
+
+        switch (_ct)
+        {
+
+          case 0:
+            _color[0] = (int)(((float)200 / (float)_rc)*mask[j][i]);
+            _color[1] = (int)(((float)44 / (float)_rc)*mask[j][i]);
+            _color[2] = (int)(((float)12 / (float)_rc)*mask[j][i]);
+            break;
+
+          case 1:
+            _color[0] = (int)(((float)100 / (float)_rc)*mask[j][i]);
+            _color[1] = (int)(((float)55 / (float)_rc)*mask[j][i]);
+            _color[2] = 0;
+            break;
+
+          case 2:
+            _color[0] = (int)(((float)245 / (float)_rc)*mask[j][i]);
+            _color[1] = (int)(((float)245 / (float)_rc)*mask[j][i]);
+            _color[2] = (int)(((float)12 / (float)_rc)*mask[j][i]);
+            break;
+        }
+        _postProcess[j][i][0] = _color[0];
+        _postProcess[j][i][1] = _color[1];
+        _postProcess[j][i][2] = _color[2];
+      }
+    }
+  }
+
+}
+
+void postProcess()
+{
+  postProcessCnt++;
+
+  if(postProcessCnt>=POSTPROCESS_CYCLE)
+  {
+    postProcessCnt=0;
+    postProcessCalculate();
+  }
+
+  for (int i = 0; i < WIDTH; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+        setLedByCoord(i, HEIGHT-4+j, _postProcess[j][i]);
+    }
+  }
+
 }
 
 /**
@@ -175,6 +254,8 @@ void show()
       setLedByCoord(i, j, display[i][j]);
     }
   }
+
+  postProcess();
 
   FastLED.show();
 }
@@ -215,14 +296,14 @@ void claculatePixel(int x, int y)
 
       for (int p = 0; p < 3; p++)
       {
-        _newPixel[p] = _newPixel[p] + (_pixel[p] * convolutionMatrix[j + 1][i + 1]);
+        _newPixel[p] = _newPixel[p] + (int)((float)_pixel[p] * (float)convolutionMatrix[j + 1][i + 1]);
       }
     }
   }
 
   for (int p = 0; p < 3; p++)
   {
-    _newPixel[p] = min(COLOR_MAX_VALUE, (int)(_newPixel[p] / convolutionDivider));
+    _newPixel[p] = min(COLOR_MAX_VALUE, (int)((float)_newPixel[p] / (float)convolutionDivider));
   }
 
   buffer[x][y][0] = (int)_newPixel[0];
