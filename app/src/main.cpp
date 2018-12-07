@@ -7,7 +7,7 @@
 #define COLOR_ORDER GRB
 
 #define DELAY_PER_CYCLE 30
-#define ADD_PARTICLE_CYCLE 1
+#define ADD_PARTICLE_CYCLE 4
 #define POSTPROCESS_CYCLE 2
 
 #define WIDTH 5
@@ -15,8 +15,9 @@
 #define NUM_LEDS WIDTH *HEIGHT
 #define DO_MASK true
 
-#define MAX_BRIGHTNESS 240
+#define MAX_BRIGHTNESS 100
 #define MIN_BRIGHTNESS 30
+#define BRIBHTNESS_CHANGE_STEP 5
 
 #define COLOR_MAX_VALUE 255
 
@@ -43,13 +44,24 @@ float convolutionMatrix[3][3] = {
     {0, 0.7, 0},
     {0.2, 1, 0.2}};
 
-int palette[3][3] = {
+#define ACTIVE_PALETTE_INDEX 0
+
+int palettes[2][3][3] = {
+  // realistic fire 1
+  {
     {218,51,0},
     {100,55,0},
-    {254,200,0},
+    {254,200,0}
+  },
+  // funky
+  {
+    {0,0,255},
+    {0,255,0},
+    {255,0,0}
+  }
 };
 
-float convolutionDivider = 2.2;
+float convolutionDivider = 2.1;
 
 int display[WIDTH][HEIGHT][3];
 int buffer[WIDTH][HEIGHT][3];
@@ -106,12 +118,12 @@ void addNewParticle()
     int rx = rand() % WIDTH;
     int ry = ceil(5 * HEIGHT / 6 + rand() % HEIGHT / 6);
 
-    int _ct = rand() % 2;
+    int _ct = rand() % 3;
     int _rc = 1 + rand() % 6;
 
     for (int p = 0; p < 3; p++)
     {
-      display[rx][ry][p] = (int)((float)palette[_ct][p] / (float)_rc);
+      display[rx][ry][p] = (int)((float)palettes[ACTIVE_PALETTE_INDEX][_ct][p] / (float)_rc);
     }
   }
 }
@@ -161,14 +173,18 @@ int _postProcess[4][5][3] = {
     {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
     {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}};
 
+/**
+ * post process
+ */
 void postProcessCalculate()
 {
+  // add glowing to the botton with masking
 
   float mask[4][5] = {
-      {0.1, 0.1, 0.5, 0.1, 0.1},
-      {0.2, 0.5, 1, 0.5, 0.2},
+      {0.2, 0.2, 0.5, 0.2, 0.2},
+      {0.5, 0.5, 1, 0.5, 0.5},
       {0.5, 1, 1, 1, 0.5},
-      {0.5, 1, 1, 1, 0.5}};
+      {0.2, 0.5, 1, 0.5, 0.2}};
 
   for (int i = 0; i < WIDTH; i++)
   {
@@ -177,24 +193,20 @@ void postProcessCalculate()
       if (mask[j][i] > 0.0)
       {
         int _color[3];
-        int _ct = rand() % 2;
-        int _rc = 4 + rand() % 4;
+        int _ct = rand() % 3;
+        int _rc = 10 + rand() % 10;
 
         for (int p = 0; p < 3; p++)
         {
-          _color[p] = (int)(((float)palette[_ct][p] / (float)_rc) * mask[j][i]);
+          _postProcess[j][i][p] = (int)(((float)palettes[ACTIVE_PALETTE_INDEX][_ct][p] / (float)_rc) * (float)mask[j][i]);
         }
-
-        _postProcess[j][i][0] = _color[0];
-        _postProcess[j][i][1] = _color[1];
-        _postProcess[j][i][2] = _color[2];
       }
     }
   }
 }
 
 float _brightness = (MAX_BRIGHTNESS - MIN_BRIGHTNESS) / 2;
-float _brigntnessSpeedChange = 10.00;
+float _brigntnessSpeedChange = BRIBHTNESS_CHANGE_STEP;
 
 void changeBrightness()
 {
@@ -228,6 +240,9 @@ void changeBrightness()
   FastLED.setBrightness((int)_brightness);
 }
 
+/**
+ * Add post process stuff here
+ */
 void postProcess()
 {
   postProcessCnt++;
@@ -268,19 +283,12 @@ void show()
 
 int getSafePixelData(int x, int y, int colorIndex)
 {
-  // return pixel data safely
-
   x = x < 0 ? 0 : x;
   x = x > WIDTH - 1 ? WIDTH - 1 : x;
 
   y = y < 0 ? 0 : y;
   y = y > HEIGHT - 1 ? HEIGHT - 1 : y;
-  /*
-	if( x<0 || x>WIDTH-1 || y<0 || y>HEIGHT-1)
-	{
-		return 0;
-	}
-	*/
+
   return display[x][y][colorIndex];
 }
 
@@ -298,7 +306,8 @@ void claculatePixel(int x, int y)
       float _pixel[3] = {
           getSafePixelData(x + i, y + j, 0),
           getSafePixelData(x + i, y + j, 1),
-          getSafePixelData(x + i, y + j, 2)};
+          getSafePixelData(x + i, y + j, 2)
+      };
 
       for (int p = 0; p < 3; p++)
       {
@@ -309,12 +318,9 @@ void claculatePixel(int x, int y)
 
   for (int p = 0; p < 3; p++)
   {
-    _newPixel[p] = min(COLOR_MAX_VALUE, (int)((float)_newPixel[p] / (float)convolutionDivider));
+    buffer[x][y][p] = (int)min(COLOR_MAX_VALUE, (int)((float)_newPixel[p] / (float)convolutionDivider));
   }
 
-  buffer[x][y][0] = (int)_newPixel[0];
-  buffer[x][y][1] = (int)_newPixel[1];
-  buffer[x][y][2] = (int)_newPixel[2];
 }
 
 /**
