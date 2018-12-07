@@ -6,7 +6,7 @@
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
 
-#define DELAY_PER_CYCLE 30
+#define DELAY_PER_CYCLE 20
 #define ADD_PARTICLE_CYCLE 4
 #define POSTPROCESS_CYCLE 2
 
@@ -17,11 +17,11 @@
 
 #define MAX_BRIGHTNESS 200
 #define MIN_BRIGHTNESS 30
-#define BRIBHTNESS_CHANGE_STEP 5
+#define BRIBHTNESS_CHANGE_STEP 7
 
 #define COLOR_MAX_VALUE 255
 
-float masking[16][5] = {
+float masking[HEIGHT][WIDTH] = {
     {0.1, 0.2, 1.0, 0.2, 0.1},
     {0.1, 0.3, 1.0, 0.3, 0.1},
     {0.2, 0.4, 1.0, 0.4, 0.2},
@@ -46,16 +46,40 @@ float convolutionMatrix[3][3] = {
 
 #define ACTIVE_PALETTE_INDEX 0
 
-int palettes[2][3][3] = {
+int palettes[][3][3] = {
   // realistic fire 1
+  {
+    {207,116,14},
+    {212,152,48},
+    {140,48,8}
+  },
+  // realistic fire 2
   {
     {218,51,0},
     {100,55,0},
     {254,200,0}
   },
+  // green fire
+  {
+    {50,80,22},
+    {111,121,21},
+    {30,60,30}
+  },
+  // aqua fire
+  {
+    {119,194,193},
+    {62,172,236},
+    {23,41,105}
+  },
   // funky
   {
     {0,0,255},
+    {0,255,0},
+    {255,0,0}
+  },
+  // x-mass
+  {
+    {125,125,125 },
     {0,255,0},
     {255,0,0}
   }
@@ -181,7 +205,7 @@ void postProcessCalculate()
   // add glowing to the botton with masking
 
   float mask[4][5] = {
-      {0.2, 0.2, 0.5, 0.2, 0.2},
+      {0.5, 0.2, 0.5, 0.2, 0.5},
       {0.5, 0.5, 1, 0.5, 0.5},
       {0.5, 1, 1, 1, 0.5},
       {0.2, 0.5, 1, 0.5, 0.2}};
