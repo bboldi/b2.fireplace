@@ -14,10 +14,8 @@
 #define MAX_BRIGHTNESS 250
 #define MIN_BRIGHTNESS 40
 
-#define MIN_CONVOLUTINO_DEVIDER 2.1
-#define MAX_CONVOLUTINO_DEVIDER 2.2
-
-#define POSTPROCESS_CYCLE 2
+#define MIN_POSTPROCESS_CYCLE 1
+#define MAX_POSTPROCESS_CYCLE 3
 
 #define WIDTH 5
 #define HEIGHT 16
@@ -53,6 +51,9 @@ float convolutionMatrix[3][3] = {
     {0, 0, 0},
     {0, 0.7, 0},
     {0.2, 1, 0.2}};
+
+#define MIN_CONVOLUTINO_DEVIDER 2.09
+#define MAX_CONVOLUTINO_DEVIDER 2.3
 
 
 float convolutionDivider = MIN_CONVOLUTINO_DEVIDER;
@@ -102,7 +103,8 @@ int palettes[][3][3] = {
 int display[WIDTH][HEIGHT][3];
 int buffer[WIDTH][HEIGHT][3];
 int particleAddedCnt = MAX_ADD_PARTICLE_CYCLE;
-int postProcessCnt = POSTPROCESS_CYCLE;
+int postProcessCycle = MAX_POSTPROCESS_CYCLE;
+int postProcessCnt = MAX_POSTPROCESS_CYCLE;
 
 int maxParticlesPerCycle = MAX_ADD_PARTICLE_CYCLE;
 
@@ -285,7 +287,7 @@ void postProcess()
 {
   postProcessCnt++;
 
-  if (postProcessCnt >= POSTPROCESS_CYCLE)
+  if (postProcessCnt >= postProcessCycle)
   {
     postProcessCnt = 0;
     postProcessCalculate();
@@ -378,16 +380,25 @@ void interpolate()
   copyBufferToDisplay();
 }
 
+int _lastAnalogValue = 0;
+
 void adjustFireIntensity()
 {
   int _a = analogRead(A0);
+  bool _didAnalogChanged = abs(_a-_lastAnalogValue)>10;
+  _lastAnalogValue = _a;
+
+  if(_didAnalogChanged) { _brightness = MAX_BRIGHTNESS; }
 
   // calc min brightness between MIN_BRIGHTNESS and MIN_BRIGHTNESS+50
   int _minBrightness = MIN_BRIGHTNESS + (int)((float)_a / 20);
 
-  _actualMaxBrightness = _minBrightness + (int)((float)(MAX_BRIGHTNESS-_minBrightness) * (float)_a / 1000);
-  convolutionDivider = MAX_CONVOLUTINO_DEVIDER - (float)((float)(MAX_CONVOLUTINO_DEVIDER-MIN_CONVOLUTINO_DEVIDER) * (float)_a / 1000);
-  _actualAddParticles = MIN_ADD_PARTICLE_CYCLE + (int)((float)(MAX_ADD_PARTICLE_CYCLE-MIN_ADD_PARTICLE_CYCLE) * (float)_a / 1000);
+  float _proportion =  (float)_a / 1000;
+
+  _actualMaxBrightness = _minBrightness + (int)((float)(MAX_BRIGHTNESS-_minBrightness) * _proportion);
+  convolutionDivider = MAX_CONVOLUTINO_DEVIDER - (float)((float)(MAX_CONVOLUTINO_DEVIDER-MIN_CONVOLUTINO_DEVIDER) * _proportion);
+  _actualAddParticles = MAX_ADD_PARTICLE_CYCLE - (int)((float)(MAX_ADD_PARTICLE_CYCLE-MIN_ADD_PARTICLE_CYCLE) * _proportion);
+  postProcessCycle = MAX_POSTPROCESS_CYCLE - (int)((float)(MAX_POSTPROCESS_CYCLE-MIN_POSTPROCESS_CYCLE) * _proportion);
 
 /*
   Serial.print(_actualMaxBrightness);
