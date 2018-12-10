@@ -7,7 +7,16 @@
 #define COLOR_ORDER GRB
 
 #define DELAY_PER_CYCLE 20
-#define ADD_PARTICLE_CYCLE 4
+
+#define MAX_ADD_PARTICLE_CYCLE 5
+#define MIN_ADD_PARTICLE_CYCLE 2
+
+#define MAX_BRIGHTNESS 250
+#define MIN_BRIGHTNESS 40
+
+#define MIN_CONVOLUTINO_DEVIDER 2.1
+#define MAX_CONVOLUTINO_DEVIDER 2.2
+
 #define POSTPROCESS_CYCLE 2
 
 #define WIDTH 5
@@ -15,11 +24,12 @@
 #define NUM_LEDS WIDTH *HEIGHT
 #define DO_MASK true
 
-#define MAX_BRIGHTNESS 200
-#define MIN_BRIGHTNESS 30
 #define BRIBHTNESS_CHANGE_STEP 7
 
 #define COLOR_MAX_VALUE 255
+
+int _actualAddParticles = MAX_ADD_PARTICLE_CYCLE;
+int _actualMaxBrightness = MAX_BRIGHTNESS;
 
 float masking[HEIGHT][WIDTH] = {
     {0.1, 0.2, 1.0, 0.2, 0.1},
@@ -43,6 +53,9 @@ float convolutionMatrix[3][3] = {
     {0, 0, 0},
     {0, 0.7, 0},
     {0.2, 1, 0.2}};
+
+
+float convolutionDivider = MIN_CONVOLUTINO_DEVIDER;
 
 #define ACTIVE_PALETTE_INDEX 0
 
@@ -85,12 +98,13 @@ int palettes[][3][3] = {
   }
 };
 
-float convolutionDivider = 2.1;
 
 int display[WIDTH][HEIGHT][3];
 int buffer[WIDTH][HEIGHT][3];
-int particleAddedCnt = ADD_PARTICLE_CYCLE;
+int particleAddedCnt = MAX_ADD_PARTICLE_CYCLE;
 int postProcessCnt = POSTPROCESS_CYCLE;
+
+int maxParticlesPerCycle = MAX_ADD_PARTICLE_CYCLE;
 
 CRGB leds[NUM_LEDS];
 
@@ -136,7 +150,7 @@ void addNewParticle()
 {
   particleAddedCnt++;
 
-  if (particleAddedCnt >= ADD_PARTICLE_CYCLE)
+  if (particleAddedCnt >= _actualAddParticles)
   {
     particleAddedCnt = 0;
     int rx = rand() % WIDTH;
@@ -229,7 +243,7 @@ void postProcessCalculate()
   }
 }
 
-float _brightness = (MAX_BRIGHTNESS - MIN_BRIGHTNESS) / 2;
+float _brightness = (_actualMaxBrightness - MIN_BRIGHTNESS) / 2;
 float _brigntnessSpeedChange = BRIBHTNESS_CHANGE_STEP;
 
 void changeBrightness()
@@ -238,16 +252,16 @@ void changeBrightness()
 
   // pingpong effect
 
-  if (_brightness > MAX_BRIGHTNESS)
+  if (_brightness > _actualMaxBrightness)
   {
-    _brightness = (float)MAX_BRIGHTNESS;
-    _brigntnessSpeedChange = -_brigntnessSpeedChange;
+    _brightness = (float)_actualMaxBrightness;
+    _brigntnessSpeedChange = -BRIBHTNESS_CHANGE_STEP;
   }
 
   if (_brightness < MIN_BRIGHTNESS)
   {
     _brightness = (float)MIN_BRIGHTNESS;
-    _brigntnessSpeedChange = -_brigntnessSpeedChange;
+    _brigntnessSpeedChange = BRIBHTNESS_CHANGE_STEP;
   }
 
   // or reverse randomly
@@ -364,8 +378,33 @@ void interpolate()
   copyBufferToDisplay();
 }
 
+void adjustFireIntensity()
+{
+  int _a = analogRead(A0);
+
+  // calc min brightness between MIN_BRIGHTNESS and MIN_BRIGHTNESS+50
+  int _minBrightness = MIN_BRIGHTNESS + (int)((float)_a / 20);
+
+  _actualMaxBrightness = _minBrightness + (int)((float)(MAX_BRIGHTNESS-_minBrightness) * (float)_a / 1000);
+  convolutionDivider = MAX_CONVOLUTINO_DEVIDER - (float)((float)(MAX_CONVOLUTINO_DEVIDER-MIN_CONVOLUTINO_DEVIDER) * (float)_a / 1000);
+  _actualAddParticles = MIN_ADD_PARTICLE_CYCLE + (int)((float)(MAX_ADD_PARTICLE_CYCLE-MIN_ADD_PARTICLE_CYCLE) * (float)_a / 1000);
+
+/*
+  Serial.print(_actualMaxBrightness);
+  Serial.print(" ");
+  Serial.print(_brightness);
+  Serial.print(" ");
+  Serial.print(convolutionDivider);
+  Serial.print(" ");
+  Serial.print(_actualAddParticles);
+  Serial.print(" ");
+  Serial.println(_a);
+  */
+}
+
 void loop()
 {
+  adjustFireIntensity();
   addNewParticle();
   interpolate();
   show();
