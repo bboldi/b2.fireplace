@@ -3,7 +3,7 @@
 
 #define LED_PIN 5
 #define BUTTON_PIN 4
-#define DEBOUNCE_TIME 1000
+#define DEBOUNCE_TIME 500
 #define BRIGHTNESS 128
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
@@ -31,6 +31,11 @@
 int _actualAddParticles = MAX_ADD_PARTICLE_CYCLE;
 int _actualMaxBrightness = MAX_BRIGHTNESS;
 
+/**
+ * Mask the fire to give it a shape,
+ * applied in post processing
+ */
+
 float masking[HEIGHT][WIDTH] = {
     {0.1, 0.2, 0.4, 1.0, 0.4, 0.2, 0.1},
     {0.1, 0.3, 0.5, 1.0, 0.5, 0.3, 0.1},
@@ -49,24 +54,43 @@ float masking[HEIGHT][WIDTH] = {
     {0.4, 1.0, 1.0, 1.0, 1.0, 1.0, 0.4},
     {0.2, 0.5, 1.0, 1.0, 1.0, 0.5, 0.2}};
 
+/**
+ * Mask the bottom of the fire to give it a more realistic shape
+ * applied in post processing
+ */
+
 float bottomMask[][WIDTH] = {
-    {0.5, 0.2, 0.5, 0.5, 0.5, 0.2, 0.5},
+    {0.0, 0.2, 0.0, 0.5, 0.0, 0.2, 0.0},
     {0.5, 0.5, 1.0, 1.0, 1.0, 0.5, 0.5},
     {0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5},
     {0.2, 0.5, 1.0, 1.0, 1.0, 0.5, 0.2}};
 
+/**
+ * Placeholder for bottom part calculation which is applied post
+ * fire calculation
+ */
 int _postProcess[][WIDTH][3] = {
     {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
     {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
     {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
     {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}};
 
+/**
+ * Matrix used for convolution
+ */
 float convolutionMatrix[3][3] = {
     {0.0, 0.0, 0},
     {0, 0.7, 0},
     {0.2, 1, 0.2}};
 
+/**
+ * Minimum divider for convolution
+ */
 #define MIN_CONVOLUTINO_DEVIDER 2.09
+
+/**
+ * Maximum divider for convolution
+ */
 #define MAX_CONVOLUTINO_DEVIDER 2.3
 
 float convolutionDivider = MIN_CONVOLUTINO_DEVIDER;
@@ -105,12 +129,18 @@ int palettes[][3][3] = {
         {0, 255, 0},
         {255, 0, 0}}};
 
+/**
+ * display and buffer martix definitions
+ */
 int display[WIDTH][HEIGHT][3];
 int buffer[WIDTH][HEIGHT][3];
+
+/**
+ * variables to control the fire intensity
+ */
 int particleAddedCnt = MAX_ADD_PARTICLE_CYCLE;
 int postProcessCycle = MAX_POSTPROCESS_CYCLE;
 int postProcessCnt = MAX_POSTPROCESS_CYCLE;
-
 int maxParticlesPerCycle = MAX_ADD_PARTICLE_CYCLE;
 
 CRGB leds[NUM_LEDS];
@@ -175,6 +205,10 @@ void addNewParticle()
 
 int _lastPressed = 0;
 
+/**
+ * INTERRUPT
+ * Change the fire color palette when button is pressed
+ */
 void changeMode()
 {
   if (millis() - _lastPressed > DEBOUNCE_TIME)
@@ -190,6 +224,9 @@ void changeMode()
   }
 }
 
+/**
+ * Setup function
+ */
 void setup()
 {
   delay(500);
@@ -262,6 +299,9 @@ void postProcessCalculate()
 float _brightness = (_actualMaxBrightness - MIN_BRIGHTNESS) / 2;
 float _brigntnessSpeedChange = BRIBHTNESS_CHANGE_STEP;
 
+/**
+ * Change fire brightness periodically
+ */
 void changeBrightness()
 {
   // brightness change over time
@@ -312,7 +352,10 @@ void postProcess()
   {
     for (int j = 0; j < 4; j++)
     {
-      setLedByCoord(i, HEIGHT - 4 + j, _postProcess[j][i]);
+      if(bottomMask[j][i] > 0)
+        {
+          setLedByCoord(i, HEIGHT - 4 + j, _postProcess[j][i]);
+        }
     }
   }
 }
@@ -335,6 +378,9 @@ void show()
   FastLED.show();
 }
 
+/**
+ * Get pixel data safely ( if there's no -1 or +1 pixel, return the closest one)
+ */
 int getSafePixelData(int x, int y, int colorIndex)
 {
   x = x < 0 ? 0 : x;
@@ -394,6 +440,9 @@ void interpolate()
 
 int _lastAnalogValue = 0;
 
+/**
+ * get analog value, and apply fire intensity changes
+ */
 void adjustFireIntensity()
 {
   int _a = analogRead(A0);
@@ -416,6 +465,9 @@ void adjustFireIntensity()
   postProcessCycle = MAX_POSTPROCESS_CYCLE - (int)((float)(MAX_POSTPROCESS_CYCLE - MIN_POSTPROCESS_CYCLE) * _proportion);
 }
 
+/**
+ * main loop
+ */
 void loop()
 {
   adjustFireIntensity();

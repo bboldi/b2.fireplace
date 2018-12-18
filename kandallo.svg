@@ -15,7 +15,10 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.2 2405546, 2018-03-11"
-   sodipodi:docname="kandallo.svg">
+   sodipodi:docname="kandallo.svg"
+   inkscape:export-filename="/home/bboldi/projects/b2.fireplace/kandallo.svg.png"
+   inkscape:export-xdpi="253.09"
+   inkscape:export-ydpi="253.09">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,16 +28,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1"
-     inkscape:cx="43.278356"
-     inkscape:cy="616.68424"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="352.79335"
+     inkscape:cy="831.95263"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="2560"
-     inkscape:window-height="1365"
-     inkscape:window-x="1920"
-     inkscape:window-y="0"
+     inkscape:window-width="1920"
+     inkscape:window-height="1141"
+     inkscape:window-x="4480"
+     inkscape:window-y="120"
      inkscape:window-maximized="1"
      showguides="true"
      inkscape:guide-bbox="true" />
@@ -46,7 +49,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -54,6 +57,15 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.95258622;paint-order:stroke fill markers"
+       id="rect843"
+       width="206.17172"
+       height="144.99371"
+       x="1.8708867"
+       y="3.4578779"
+       inkscape:export-xdpi="253.09"
+       inkscape:export-ydpi="253.09" />
     <g
        id="g4699"
        transform="matrix(0.93240212,0,0,0.93240212,16.463539,-30.093861)">
