@@ -1,3 +1,17 @@
+/**
+ * Digital Fireplace Firmware v0.1
+ * 24/12/2018
+ *
+ * By: Boldizsar Bednarik
+ * Email: bbednarik@gmail.com
+ *
+ * Terms Of Use:
+ *
+ * You're free to use and modify for non commercial purposes
+ * If you want to use in a commercial project, please contact me
+ *
+ */
+
 #include <Arduino.h>
 #include <FastLED.h>
 
